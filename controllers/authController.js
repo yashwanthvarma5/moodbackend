@@ -7,27 +7,38 @@ exports.register = async (req, res) => {
   const { username, email, password, confirmPassword } = req.body;
 
   try {
+    if (password !== confirmPassword) {
+      return res.status(400).json({ msg: "Passwords do not match" });
+    }
+
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new User({
       username,
       email,
       password: hashedPassword,
-      confirmPassword: hashedPassword,
     });
+
     await newUser.save();
 
     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    res
-      .status(201)
-      .json({ msg: "User registered successfully", token, user: newUser });
+    res.status(201).json({
+      msg: "User registered successfully",
+      token,
+      user: {
+        _id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+      },
+    });
   } catch (err) {
     res.status(500).json({ msg: "Server error", error: err.message });
   }
@@ -50,7 +61,14 @@ exports.login = async (req, res) => {
       expiresIn: "7d",
     });
 
-    res.json({ token, user });
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
   } catch (err) {
     res.status(500).json({ msg: "Server error", error: err.message });
   }
