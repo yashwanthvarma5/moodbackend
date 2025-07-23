@@ -10,10 +10,13 @@ const moodRoutes = require("./routes/moods");
 
 const app = express();
 
-// CORS Configuration (allow frontend on localhost:5174)
+// ✅ Updated CORS Configuration to allow local and deployed frontend
 app.use(
   cors({
-    origin: "http://localhost:5173", // ✅ match your frontend port
+    origin: [
+      "http://localhost:5173",                // local dev
+      "https://moodfrontend-dszd.vercel.app"  // deployed frontend
+    ],
     credentials: true,
   })
 );
