@@ -10,30 +10,46 @@ const moodRoutes = require("./routes/moods");
 
 const app = express();
 
-// ✅ Updated CORS Configuration to allow local and deployed frontend
+// ✅ CORS configuration: allow local + deployed frontend
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://moodfrontend-dszd.vercel.app"
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",                // local dev
-      "https://moodfrontend-dszd.vercel.app"  // deployed frontend
-    ],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
 
+// Parse incoming JSON requests
 app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/moods", moodRoutes);
 
+// Default root route
+app.get("/", (req, res) => {
+  res.send("✅ Mood API is running");
+});
+
 // MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
-    app.listen(process.env.PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${process.env.PORT}`);
+
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
